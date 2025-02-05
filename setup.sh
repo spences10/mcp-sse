@@ -33,50 +33,56 @@ sudo mkdir -p /opt/mcp-sse/{bin,config,logs}
 
 # Add API key to environment
 echo "Setting up environment variables..."
-echo "export MCP_SSE_API_KEY=\"$MCP_SSE_API_KEY\"" >> ~/.bashrc
+cat > /etc/profile.d/mcp-sse.sh << EOL
+export MCP_SSE_API_KEY="$MCP_SSE_API_KEY"
+EOL
+chmod 644 /etc/profile.d/mcp-sse.sh
+source /etc/profile.d/mcp-sse.sh
 
 # Install Deno 2
 echo "Installing Deno 2..."
-curl -fsSL https://deno.land/x/install/install.sh | DENO_VERSION=v2.0.0 sh
-echo 'export DENO_INSTALL="$HOME/.deno"' >> ~/.bashrc
-echo 'export PATH="$DENO_INSTALL/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+export DENO_INSTALL="/opt/deno"
+export PATH="$DENO_INSTALL/bin:$PATH"
 
-# Install Volta and Node.js
+# Install Deno silently
+curl -fsSL https://deno.land/x/install/install.sh | DENO_INSTALL=/opt/deno DENO_VERSION=v2.0.0 sh -s
+
+# Add Deno to system-wide profile
+cat > /etc/profile.d/deno.sh << 'EOL'
+export DENO_INSTALL="/opt/deno"
+export PATH="$DENO_INSTALL/bin:$PATH"
+EOL
+
+chmod 755 /etc/profile.d/deno.sh
+source /etc/profile.d/deno.sh
+
+# Install Volta and Node.js system-wide
 echo "Installing Volta and Node.js..."
-curl -fsSL https://get.volta.sh | bash
-
-# Source Volta
-export VOLTA_HOME="$HOME/.volta"
+export VOLTA_HOME="/opt/volta"
 export PATH="$VOLTA_HOME/bin:$PATH"
+
+# Install Volta silently
+curl -fsSL https://get.volta.sh | bash -s -- --skip-setup
+
+# Add Volta to system-wide profile
+cat > /etc/profile.d/volta.sh << 'EOL'
+export VOLTA_HOME="/opt/volta"
+export PATH="$VOLTA_HOME/bin:$PATH"
+EOL
+
+chmod 755 /etc/profile.d/volta.sh
+source /etc/profile.d/volta.sh
+
+# Verify and configure Volta
 if [ ! -f "$VOLTA_HOME/bin/volta" ]; then
     echo "Volta installation failed. Please check the logs above."
     exit 1
 fi
 
-# Add Volta to shell configuration
-echo 'export VOLTA_HOME="$HOME/.volta"' >> ~/.bashrc
-echo 'export PATH="$VOLTA_HOME/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-
-# Verify Deno installation
-if ! command -v deno &> /dev/null; then
-    echo "Deno installation failed. Please check the logs above."
-    exit 1
-fi
-
-deno_version=$(deno --version | head -n 1)
-if [[ ! $deno_version == *"2."* ]]; then
-    echo "Wrong Deno version installed: $deno_version. Expected version 2.x"
-    exit 1
-fi
-
-echo "Installing Node.js..."
-volta install node@20
-
-# Install PM2 globally
-echo "Installing PM2..."
-volta install pm2
+# Install Node.js and PM2 silently
+echo "Installing Node.js and PM2..."
+volta install node@20 > /dev/null 2>&1
+volta install pm2 > /dev/null 2>&1
 
 # Clone and set up repository
 echo "Setting up repository..."
