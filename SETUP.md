@@ -203,6 +203,22 @@ The server uses the following environment variables:
 - `MCP_CONFIG_PATH`: Path to the MCP settings configuration file (default: `/opt/mcp-sse/config/mcp_settings.json`)
 - `MCP_SSE_API_KEY`: API key for authenticating tool registration requests
 
+## Uninstallation
+
+To completely remove the MCP SSE server and all its components:
+
+```bash
+# Download and run remove script
+curl -fsSL https://raw.githubusercontent.com/spences10/mcp-sse/main/remove.sh | sudo bash
+```
+
+The remove script will:
+1. Stop and remove the PM2 service
+2. Remove all installation files and directories
+3. Clean up environment variables
+4. Remove the mcp-sse user (if it was created)
+5. Optionally remove Volta/Node.js and Deno (you will be prompted)
+
 ## Security Notes
 
 - The configuration file contains sensitive API keys - ensure proper file permissions are set
