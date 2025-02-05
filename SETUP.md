@@ -46,18 +46,48 @@ The script will:
 └── logs/               # PM2 logs
 ```
 
-### Updating Tool API Keys
+### Managing Tools
 
-Use the provided helper script to update API keys for MCP tools:
+Tools can be managed in two ways:
 
-```bash
-/opt/mcp-sse/bin/update-tool.sh <tool-name> <env-key> <env-value>
-```
+1. Configuration File (Persistent):
+   - Tools defined in `/opt/mcp-sse/config/mcp_settings.json`
+   - Automatically loaded on server startup
+   - Use the helper script to update API keys:
+     ```bash
+     /opt/mcp-sse/bin/update-tool.sh <tool-name> <env-key> <env-value>
+     ```
+   - Example:
+     ```bash
+     /opt/mcp-sse/bin/update-tool.sh mcp-tavily-search TAVILY_API_KEY your-api-key-here
+     ```
 
-Example:
-```bash
-/opt/mcp-sse/bin/update-tool.sh mcp-tavily-search TAVILY_API_KEY your-api-key-here
-```
+2. Dynamic Registration (Runtime):
+   - Tools can be registered via HTTP POST to `/tools`
+   - Requires authentication using the `X-API-Key` header
+   - Example:
+     ```bash
+     # The API key must match MCP_SSE_API_KEY environment variable
+     curl -X POST http://localhost:3030/tools \
+       -H "Content-Type: application/json" \
+       -H "X-API-Key: your-server-api-key" \
+       -d '{
+         "id": "my-tool",
+         "name": "My Tool",
+         "version": "1.0.0",
+         "description": "Tool description",
+         "command": "npx",
+         "args": ["-y", "my-tool"],
+         "env": {
+           "API_KEY": "your-key-here"
+         }
+       }'
+     ```
+   - List registered tools:
+     ```bash
+     curl http://localhost:3030/tools \
+       -H "X-API-Key: your-server-api-key"
+     ```
 
 ### Managing the Server
 
@@ -119,9 +149,12 @@ If you encounter any issues:
 The server uses the following environment variables:
 
 - `MCP_CONFIG_PATH`: Path to the MCP settings configuration file (default: `/opt/mcp-sse/config/mcp_settings.json`)
+- `MCP_SSE_API_KEY`: API key for authenticating tool registration requests
 
 ## Security Notes
 
 - The configuration file contains sensitive API keys - ensure proper file permissions are set
 - Only run the update-tool.sh script as the same user that owns the MCP SSE server process
+- The `MCP_SSE_API_KEY` environment variable must be set and kept secure
+- All tool management endpoints require authentication via the `X-API-Key` header
 - Monitor the logs for any unauthorized access attempts

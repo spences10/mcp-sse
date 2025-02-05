@@ -17,9 +17,17 @@ if ! command -v jq &> /dev/null; then
     sudo apt-get install -y jq
 fi
 
+# Generate API key
+echo "Generating API key..."
+MCP_SSE_API_KEY=$(openssl rand -hex 32)
+
 # Create directory structure
 echo "Creating directory structure..."
 sudo mkdir -p /opt/mcp-sse/{bin,config,logs}
+
+# Add API key to environment
+echo "Setting up environment variables..."
+echo "export MCP_SSE_API_KEY=\"$MCP_SSE_API_KEY\"" >> ~/.bashrc
 
 # Install Deno 2
 echo "Installing Deno 2..."
@@ -104,13 +112,14 @@ EOL
 
 # Create PM2 ecosystem file
 echo "Creating PM2 ecosystem configuration..."
-cat > /opt/mcp-sse/bin/ecosystem.config.js << 'EOL'
+cat > /opt/mcp-sse/bin/ecosystem.config.js << EOL
 module.exports = {
   apps: [{
     name: 'mcp-sse',
     script: 'deno run --allow-net --allow-read --allow-env src/main.ts',
     env: {
-      MCP_CONFIG_PATH: '/opt/mcp-sse/config/mcp_settings.json'
+      MCP_CONFIG_PATH: '/opt/mcp-sse/config/mcp_settings.json',
+      MCP_SSE_API_KEY: "${MCP_SSE_API_KEY}"
     },
     log_file: '/opt/mcp-sse/logs/mcp-sse.log',
     time: true
@@ -159,6 +168,9 @@ chmod 755 /opt/mcp-sse/bin/update-tool.sh
 
 echo "Installation complete!"
 echo "MCP SSE server is now running and configured to start on boot"
+echo ""
+echo "Your MCP SSE API key is: $MCP_SSE_API_KEY"
+echo "This key is required for tool management operations."
 echo ""
 echo "To update tool API keys, use the update-tool.sh script:"
 echo "Example: /opt/mcp-sse/bin/update-tool.sh mcp-tavily-search TAVILY_API_KEY your-api-key-here"

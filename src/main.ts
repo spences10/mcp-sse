@@ -4,10 +4,24 @@ import { MCPToolRegistry } from '@/core/tool_registry.ts';
 import { ToolRouteHandler } from '@/routes/tool_routes.ts';
 import { Connection } from '@/types/types.ts';
 import { crypto } from 'https://deno.land/std/crypto/mod.ts';
+import { ConfigLoader } from '@/utils/config_loader.ts';
 
 const connectionManager = new SSEConnectionManager();
 const toolRegistry = new MCPToolRegistry();
 const toolRouteHandler = new ToolRouteHandler(toolRegistry);
+const configLoader = ConfigLoader.getInstance();
+
+// Load and register tools from config
+try {
+  await configLoader.loadConfig();
+  const tools = configLoader.convertConfigToTools();
+  for (const tool of tools) {
+    toolRegistry.register(tool);
+    console.log(`Registered tool: ${tool.name}`);
+  }
+} catch (error) {
+  console.error('Failed to load tools from config:', error);
+}
 
 async function handleSSE(req: Request): Promise<Response> {
   const headers = new Headers({
@@ -65,7 +79,7 @@ const handler = async (req: Request): Promise<Response> => {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
       },
     });
   }
@@ -82,7 +96,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   // List registered tools
   if (url.pathname === '/tools' && req.method === 'GET') {
-    return toolRouteHandler.handleToolList();
+    return toolRouteHandler.handleToolList(req);
   }
 
   // Health check endpoint
