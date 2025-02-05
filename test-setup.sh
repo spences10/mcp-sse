@@ -10,8 +10,11 @@ for profile in /etc/profile.d/*.sh; do
     fi
 done
 
-# Ensure Volta and Deno are in PATH
-export PATH="/opt/volta/bin:/opt/deno/bin:$PATH"
+# Ensure all required paths are available
+export PATH="/opt/volta/tools/image/packages/pm2/bin:/opt/volta/tools/image/node/20.18.2/bin:/opt/volta/bin:/opt/deno/bin:$PATH"
+
+# Wait a moment for PATH to be updated
+sleep 2
 
 # Ensure pm2 is available
 if ! command -v pm2 &> /dev/null; then
