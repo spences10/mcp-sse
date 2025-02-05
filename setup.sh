@@ -6,10 +6,21 @@ set -e
 echo "Starting MCP SSE Server Setup..."
 
 # Check for required packages
+echo "Checking and installing required packages..."
+sudo apt-get update
+PACKAGES_TO_INSTALL=""
+
 if ! command -v jq &> /dev/null; then
-    echo "Installing jq..."
-    sudo apt-get update
-    sudo apt-get install -y jq
+    PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL jq"
+fi
+
+if ! command -v unzip &> /dev/null; then
+    PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL unzip"
+fi
+
+if [ ! -z "$PACKAGES_TO_INSTALL" ]; then
+    echo "Installing:$PACKAGES_TO_INSTALL"
+    sudo apt-get install -y $PACKAGES_TO_INSTALL
 fi
 
 # Generate API key

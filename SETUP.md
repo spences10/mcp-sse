@@ -6,7 +6,10 @@ This guide explains how to set up the MCP SSE server on a fresh Ubuntu server.
 
 - A fresh Ubuntu server (Ubuntu 24.04)
 - Root access or sudo privileges
-- jq installed (will be automatically installed if missing)
+
+Required packages (will be automatically installed if missing):
+- jq (for JSON processing)
+- unzip (for Deno installation)
 
 ## Installation
 
