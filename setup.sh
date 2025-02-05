@@ -6,14 +6,9 @@ set -e
 echo "Starting MCP SSE Server Setup..."
 
 # Check for required packages
-if ! command -v git &> /dev/null; then
-    echo "Installing git..."
-    sudo apt-get update
-    sudo apt-get install -y git
-fi
-
 if ! command -v jq &> /dev/null; then
     echo "Installing jq..."
+    sudo apt-get update
     sudo apt-get install -y jq
 fi
 
@@ -72,12 +67,31 @@ volta install node@20
 echo "Installing PM2..."
 volta install pm2
 
-# Clone mcp-sse repository
-echo "Cloning mcp-sse repository..."
-cd /opt/mcp-sse/bin
-if ! git clone https://github.com/scott/mcp-sse.git .; then
-    echo "Failed to clone repository. Please check your internet connection and repository access."
-    exit 1
+# Clone and set up repository
+echo "Setting up repository..."
+REPO_PATH="/opt/mcp-sse/bin"
+
+# If running as root, create a dedicated user
+if [ "$(id -u)" = "0" ]; then
+    echo "Creating mcp-sse user..."
+    useradd -r -s /bin/bash mcp-sse || true
+    usermod -d /opt/mcp-sse mcp-sse
+fi
+
+# Ensure directory exists and set ownership
+sudo mkdir -p "$REPO_PATH"
+if [ "$(id -u)" = "0" ]; then
+    sudo chown -R mcp-sse:mcp-sse /opt/mcp-sse
+    # Switch to mcp-sse user for git operations
+    sudo -u mcp-sse git clone https://github.com/spences10/mcp-sse.git "$REPO_PATH/." || {
+        echo "Failed to clone repository. Please check your internet connection and repository access."
+        exit 1
+    }
+else
+    if ! git clone https://github.com/spences10/mcp-sse.git "$REPO_PATH/."; then
+        echo "Failed to clone repository. Please check your internet connection and repository access."
+        exit 1
+    fi
 fi
 
 # Create MCP settings template
@@ -129,7 +143,11 @@ EOL
 
 # Set permissions
 echo "Setting permissions..."
-sudo chown -R $USER:$USER /opt/mcp-sse
+if [ "$(id -u)" = "0" ]; then
+    sudo chown -R mcp-sse:mcp-sse /opt/mcp-sse
+else
+    sudo chown -R $USER:$USER /opt/mcp-sse
+fi
 chmod 755 /opt/mcp-sse/bin/ecosystem.config.js
 chmod 600 /opt/mcp-sse/config/mcp_settings.json  # Restrict access to config file with API keys
 

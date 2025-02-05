@@ -4,28 +4,38 @@ This guide explains how to set up the MCP SSE server on a fresh Ubuntu server.
 
 ## Prerequisites
 
-- A fresh Ubuntu server (tested on Ubuntu 22.04)
+- A fresh Ubuntu server (Ubuntu 24.04)
 - Root access or sudo privileges
-- Git installed (`apt-get install git`)
-- jq installed (`apt-get install jq`)
+- jq installed (will be automatically installed if missing)
 
 ## Installation
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/yourusername/mcp-sse.git
-   cd mcp-sse
-   ```
+The installation process differs slightly depending on whether you're running as root or a regular user.
 
-2. Make the setup script executable:
-   ```bash
-   chmod +x setup.sh
-   ```
+### Installing as Root (Recommended for Production)
 
-3. Run the setup script:
-   ```bash
-   ./setup.sh
-   ```
+When run as root, the setup script will:
+- Create a dedicated `mcp-sse` system user
+- Install all components under `/opt/mcp-sse`
+- Set appropriate ownership and permissions
+- Configure the service to run as the `mcp-sse` user
+
+```bash
+# Download and run setup script
+curl -fsSL https://raw.githubusercontent.com/spences10/mcp-sse/main/setup.sh | sudo bash
+```
+
+### Installing as Regular User (Development)
+
+When run as a regular user, the setup script will:
+- Install all components under `/opt/mcp-sse`
+- Set ownership to your user account
+- Configure the service to run as your user
+
+```bash
+# Download and run setup script
+curl -fsSL https://raw.githubusercontent.com/spences10/mcp-sse/main/setup.sh | bash
+```
 
 The script will:
 - Install Deno 2 and Node.js (via Volta)
@@ -41,10 +51,18 @@ The script will:
 ```
 /opt/mcp-sse/
 ├── bin/                 # Deno server and scripts
+│   ├── src/            # Server source code
+│   ├── ecosystem.config.js  # PM2 configuration
+│   └── update-tool.sh  # Tool management script
 ├── config/             # Configuration files
 │   └── mcp_settings.json  # MCP tools configuration
 └── logs/               # PM2 logs
 ```
+
+The installation creates a standardized directory structure with appropriate permissions:
+- All files are owned by the `mcp-sse` user (when installed as root)
+- Configuration files have restricted permissions (600)
+- Executable files have correct permissions (755)
 
 ### Managing Tools
 
@@ -106,23 +124,54 @@ Tools can be managed in two ways:
   pm2 restart mcp-sse
   ```
 
-## Validation
+## Testing the Installation
 
-After setup, you can validate the installation by:
+A comprehensive test script is provided to validate the installation:
 
-1. Checking the server status:
+```bash
+# Download and run test script
+curl -fsSL https://raw.githubusercontent.com/spences10/mcp-sse/main/test-setup.sh | bash
+```
+
+The test script validates:
+1. Server status and health
+2. Tool registration and listing
+3. Configuration management
+4. SSE connections
+5. Security measures
+6. File permissions
+
+Each test provides clear feedback with ✓ or ✗ indicators. If any test fails, the script will exit with details about what went wrong.
+
+You can also manually validate specific components:
+
+1. Check server status:
    ```bash
    pm2 status
    ```
 
-2. Verifying the logs:
+2. View logs:
    ```bash
    pm2 logs mcp-sse
    ```
 
-3. Testing the health endpoint:
+3. Test health endpoint:
    ```bash
    curl http://localhost:3030/health
+   ```
+
+4. Test tool registration:
+   ```bash
+   # Replace YOUR_API_KEY with the key shown during installation
+   curl -X POST http://localhost:3030/tools \
+     -H "Content-Type: application/json" \
+     -H "X-API-Key: YOUR_API_KEY" \
+     -d '{
+       "id": "test-tool",
+       "name": "Test Tool",
+       "version": "1.0.0",
+       "description": "A test tool"
+     }'
    ```
 
 ## Troubleshooting
