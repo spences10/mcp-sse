@@ -3,6 +3,14 @@
 # Exit on error
 set -e
 
+# Source bashrc to get updated PATH with Volta
+if [ -f "$HOME/.bashrc" ]; then
+    source "$HOME/.bashrc"
+fi
+
+# Ensure pm2 is in PATH
+export PATH="$HOME/.volta/bin:$PATH"
+
 echo "Starting MCP SSE Server Tests..."
 
 # Function to check if a command was successful
