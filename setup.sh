@@ -56,33 +56,47 @@ EOL
 chmod 755 /etc/profile.d/deno.sh
 source /etc/profile.d/deno.sh
 
-# Install Volta and Node.js system-wide
-echo "Installing Volta and Node.js..."
+# Install Volta system-wide
+echo "Installing Volta..."
 export VOLTA_HOME="/opt/volta"
 export PATH="$VOLTA_HOME/bin:$PATH"
 
 # Install Volta silently
 curl -fsSL https://get.volta.sh | bash -s -- --skip-setup
 
-# Add Volta to system-wide profile
-cat > /etc/profile.d/volta.sh << 'EOL'
-export VOLTA_HOME="/opt/volta"
-export PATH="$VOLTA_HOME/bin:$PATH"
-EOL
-
-chmod 755 /etc/profile.d/volta.sh
-source /etc/profile.d/volta.sh
-
-# Verify and configure Volta
+# Verify Volta installation
 if [ ! -f "$VOLTA_HOME/bin/volta" ]; then
     echo "Volta installation failed. Please check the logs above."
     exit 1
 fi
 
-# Install Node.js and PM2 silently
-echo "Installing Node.js and PM2..."
-volta install node@20 > /dev/null 2>&1
+# Install Node.js LTS and PM2 silently
+echo "Installing Node.js LTS and PM2..."
+volta install node@lts > /dev/null 2>&1
 volta install pm2 > /dev/null 2>&1
+
+# Get the actual binary paths
+NODE_BIN_PATH=$(volta which node | sed 's/\/node$//')
+PM2_BIN_PATH=$(volta which pm2 | sed 's/\/pm2$//')
+
+# Add Volta to system-wide profile with complete paths
+cat > /etc/profile.d/volta.sh << EOL
+export VOLTA_HOME="/opt/volta"
+export PATH="$PM2_BIN_PATH:$NODE_BIN_PATH:$VOLTA_HOME/bin:$PATH"
+EOL
+
+chmod 755 /etc/profile.d/volta.sh
+source /etc/profile.d/volta.sh
+
+# Add paths to current session
+export PATH="$PM2_BIN_PATH:$NODE_BIN_PATH:$VOLTA_HOME/bin:$PATH"
+
+# Ensure the paths are available in PM2 startup
+pm2_startup_path=\$(pm2 startup | grep "sudo" | sed 's/.*sudo //')
+if [ ! -z "\$pm2_startup_path" ]; then
+    echo "Configuring PM2 startup with correct PATH..."
+    eval "sudo \$pm2_startup_path"
+fi
 
 # Clone and set up repository
 echo "Setting up repository..."
@@ -141,13 +155,17 @@ cat > /opt/mcp-sse/config/mcp_settings.json << 'EOL'
 }
 EOL
 
+# Ensure all required paths are available
+export PATH="$PM2_BIN_PATH:$NODE_BIN_PATH:$VOLTA_HOME/bin:/opt/deno/bin:$PATH"
+
 # Create PM2 ecosystem file
 echo "Creating PM2 ecosystem configuration..."
 cat > /opt/mcp-sse/bin/ecosystem.config.js << EOL
 module.exports = {
   apps: [{
     name: 'mcp-sse',
-    script: 'deno run --allow-net --allow-read --allow-env src/main.ts',
+    script: 'deno run --allow-net --allow-read --allow-env /opt/mcp-sse/bin/src/main.ts',
+    cwd: '/opt/mcp-sse/bin',
     env: {
       MCP_CONFIG_PATH: '/opt/mcp-sse/config/mcp_settings.json',
       MCP_SSE_API_KEY: "${MCP_SSE_API_KEY}"
@@ -168,11 +186,29 @@ fi
 chmod 755 /opt/mcp-sse/bin/ecosystem.config.js
 chmod 600 /opt/mcp-sse/config/mcp_settings.json  # Restrict access to config file with API keys
 
-# Setup PM2 startup
+# Setup PM2 startup with correct PATH
 echo "Configuring PM2 startup..."
+# Stop any existing process
+if command -v pm2 &> /dev/null; then
+    pm2 delete mcp-sse || true
+fi
+
+# Start with correct working directory
+cd /opt/mcp-sse/bin
+pm2 start ecosystem.config.js
+
+# Configure startup and save process list
 pm2 startup
-pm2 start /opt/mcp-sse/bin/ecosystem.config.js
 pm2 save
+
+# Verify the process is running
+echo "Verifying process status..."
+sleep 2
+pm2 list
+
+# Test the server is accessible
+echo "Testing server accessibility..."
+curl -s http://localhost:3030/health
 
 # Create helper script for updating tool configurations
 cat > /opt/mcp-sse/bin/update-tool.sh << 'EOL'
