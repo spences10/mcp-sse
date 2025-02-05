@@ -3,13 +3,21 @@
 # Exit on error
 set -e
 
-# Source bashrc to get updated PATH with Volta
-if [ -f "$HOME/.bashrc" ]; then
-    source "$HOME/.bashrc"
-fi
+# Source system-wide profiles
+for profile in /etc/profile.d/*.sh; do
+    if [ -r "$profile" ]; then
+        source "$profile"
+    fi
+done
 
-# Ensure pm2 is in PATH
-export PATH="$HOME/.volta/bin:$PATH"
+# Ensure Volta and Deno are in PATH
+export PATH="/opt/volta/bin:/opt/deno/bin:$PATH"
+
+# Ensure pm2 is available
+if ! command -v pm2 &> /dev/null; then
+    echo "Error: pm2 not found. Please ensure the setup script completed successfully."
+    exit 1
+fi
 
 echo "Starting MCP SSE Server Tests..."
 

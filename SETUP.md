@@ -8,6 +8,7 @@ This guide explains how to set up the MCP SSE server on a fresh Ubuntu server.
 - Root access or sudo privileges
 
 Required packages (will be automatically installed if missing):
+
 - jq (for JSON processing)
 - unzip (for Deno installation)
 
@@ -18,6 +19,7 @@ The installation process differs slightly depending on whether you're running as
 ### Installing as Root (Recommended for Production)
 
 When run as root, the setup script will:
+
 - Create a dedicated `mcp-sse` system user
 - Install all components under `/opt/mcp-sse`
 - Set appropriate ownership and permissions
@@ -31,6 +33,7 @@ curl -fsSL https://raw.githubusercontent.com/spences10/mcp-sse/main/setup.sh | s
 ### Installing as Regular User (Development)
 
 When run as a regular user, the setup script will:
+
 - Install all components under `/opt/mcp-sse`
 - Set ownership to your user account
 - Configure the service to run as your user
@@ -41,6 +44,7 @@ curl -fsSL https://raw.githubusercontent.com/spences10/mcp-sse/main/setup.sh | b
 ```
 
 The script will:
+
 - Install Deno 2 and Node.js (via Volta)
 - Create the necessary directory structure in `/opt/mcp-sse`
 - Set up PM2 for process management
@@ -63,6 +67,7 @@ The script will:
 ```
 
 The installation creates a standardized directory structure with appropriate permissions:
+
 - All files are owned by the `mcp-sse` user (when installed as root)
 - Configuration files have restricted permissions (600)
 - Executable files have correct permissions (755)
@@ -72,6 +77,7 @@ The installation creates a standardized directory structure with appropriate per
 Tools can be managed in two ways:
 
 1. Configuration File (Persistent):
+
    - Tools defined in `/opt/mcp-sse/config/mcp_settings.json`
    - Automatically loaded on server startup
    - Use the helper script to update API keys:
@@ -113,11 +119,13 @@ Tools can be managed in two ways:
 ### Managing the Server
 
 - Check server status:
+
   ```bash
   pm2 status
   ```
 
 - View logs:
+
   ```bash
   pm2 logs mcp-sse
   ```
@@ -137,6 +145,7 @@ curl -fsSL https://raw.githubusercontent.com/spences10/mcp-sse/main/test-setup.s
 ```
 
 The test script validates:
+
 1. Server status and health
 2. Tool registration and listing
 3. Configuration management
@@ -149,16 +158,19 @@ Each test provides clear feedback with ✓ or ✗ indicators. If any test fails,
 You can also manually validate specific components:
 
 1. Check server status:
+
    ```bash
    pm2 status
    ```
 
 2. View logs:
+
    ```bash
    pm2 logs mcp-sse
    ```
 
 3. Test health endpoint:
+
    ```bash
    curl http://localhost:3030/health
    ```
@@ -182,11 +194,13 @@ You can also manually validate specific components:
 If you encounter any issues:
 
 1. Check the logs:
+
    ```bash
    pm2 logs mcp-sse
    ```
 
 2. Verify the configuration:
+
    ```bash
    cat /opt/mcp-sse/config/mcp_settings.json
    ```
@@ -202,22 +216,6 @@ The server uses the following environment variables:
 
 - `MCP_CONFIG_PATH`: Path to the MCP settings configuration file (default: `/opt/mcp-sse/config/mcp_settings.json`)
 - `MCP_SSE_API_KEY`: API key for authenticating tool registration requests
-
-## Uninstallation
-
-To completely remove the MCP SSE server and all its components:
-
-```bash
-# Download and run remove script
-curl -fsSL https://raw.githubusercontent.com/spences10/mcp-sse/main/remove.sh | sudo bash
-```
-
-The remove script will:
-1. Stop and remove the PM2 service
-2. Remove all installation files and directories
-3. Clean up environment variables
-4. Remove the mcp-sse user (if it was created)
-5. Optionally remove Volta/Node.js and Deno (you will be prompted)
 
 ## Security Notes
 

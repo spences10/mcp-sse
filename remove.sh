@@ -5,13 +5,15 @@ set -e
 
 echo "Starting MCP SSE Server Removal..."
 
-# Source bashrc to get updated PATH with Volta
-if [ -f "$HOME/.bashrc" ]; then
-    source "$HOME/.bashrc"
-fi
+# Source system-wide profiles
+for profile in /etc/profile.d/*.sh; do
+    if [ -r "$profile" ]; then
+        source "$profile"
+    fi
+done
 
-# Ensure pm2 is in PATH
-export PATH="$HOME/.volta/bin:$PATH"
+# Ensure Volta and Deno are in PATH
+export PATH="/opt/volta/bin:/opt/deno/bin:$PATH"
 
 # Function to check if running as root
 check_root() {
@@ -67,12 +69,9 @@ fi
 read -p "Do you want to remove Volta and Node.js? (y/N) " remove_volta
 if [ "$remove_volta" = "y" ] || [ "$remove_volta" = "Y" ]; then
     echo "Removing Volta and Node.js..."
-    if [ -d "$HOME/.volta" ]; then
-        rm -rf "$HOME/.volta"
-        # Remove Volta from bashrc
-        temp_file=$(mktemp)
-        grep -v "VOLTA_HOME" "$HOME/.bashrc" > "$temp_file"
-        mv "$temp_file" "$HOME/.bashrc"
+    if [ -d "/opt/volta" ]; then
+        rm -rf /opt/volta
+        rm -f /etc/profile.d/volta.sh
     fi
 fi
 
@@ -80,12 +79,9 @@ fi
 read -p "Do you want to remove Deno? (y/N) " remove_deno
 if [ "$remove_deno" = "y" ] || [ "$remove_deno" = "Y" ]; then
     echo "Removing Deno..."
-    if [ -d "$HOME/.deno" ]; then
-        rm -rf "$HOME/.deno"
-        # Remove Deno from bashrc
-        temp_file=$(mktemp)
-        grep -v "DENO_INSTALL" "$HOME/.bashrc" > "$temp_file"
-        mv "$temp_file" "$HOME/.bashrc"
+    if [ -d "/opt/deno" ]; then
+        rm -rf /opt/deno
+        rm -f /etc/profile.d/deno.sh
     fi
 fi
 
