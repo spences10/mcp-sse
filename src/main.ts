@@ -100,7 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
   return new Response('Not Found', { status: 404 });
 };
 
-const port = 8000;
+const port = 3030;
 console.log(`SSE server starting on port ${port}...`);
 
 await serve(handler, { port });

@@ -1,5 +1,5 @@
 // Test client for SSE connections
-const sse = new EventSource('http://localhost:8000/sse');
+const sse = new EventSource('http://localhost:3030/sse');
 
 sse.onmessage = (event) => {
   const data = JSON.parse(event.data);

@@ -16,7 +16,7 @@ export interface ToolRegistry {
 // Connection related types
 export interface Connection {
   id: string;
-  target: ReadableStreamDefaultController<string>;
+  target: WritableStreamDefaultWriter;
   connectedAt: Date;
   lastMessageAt: Date;
 }

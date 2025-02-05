@@ -31,7 +31,7 @@ export class SSEConnectionManager implements ConnectionManager {
     }
 
     try {
-      connection.target.enqueue(`data: ${message}\n\n`);
+      connection.target.write(new TextEncoder().encode(`data: ${message}\n\n`));
       connection.lastMessageAt = new Date();
     } catch (error) {
       console.error(`Error sending message to connection ${connectionId}:`, error);

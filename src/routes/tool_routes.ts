@@ -1,5 +1,5 @@
 import { Tool } from '@/types/types.ts';
-import { MCPToolRegistry } from './tool_registry.ts';
+import { MCPToolRegistry } from '@/core/tool_registry.ts';
 
 export class ToolRouteHandler {
   private toolRegistry: MCPToolRegistry;
