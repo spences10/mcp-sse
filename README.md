@@ -29,16 +29,12 @@ A Server-Sent Events (SSE) implementation for MCP tools, replacing the current s
    		"mcp-tavily-search": {
    			"command": "npx",
    			"args": ["mcp-tavily-search"],
-   			"env": {
-   				"TAVILY_API_KEY": "your-tavily-key"
-   			}
+   			"env": {}
    		},
    		"another-tool": {
    			"command": "npx",
    			"args": ["another-mcp-tool"],
-   			"env": {
-   				"TOOL_API_KEY": "your-key"
-   			}
+   			"env": {}
    		}
    	}
    }
@@ -51,24 +47,59 @@ A Server-Sent Events (SSE) implementation for MCP tools, replacing the current s
 
    For Claude Desktop:
 
-   - Go to Settings > Tools
-   - Add a new tool configuration:
-     ```
-     SSE URL: https://your-coolify-url:3030
-     API Key: your-mcp-sse-api-key  # The value you set in MCP_SSE_API_KEY
-     ```
+   ```json
+   {
+   	"mcp": {
+   		"transport": "sse",
+   		"url": "https://your-coolify-url:3030/sse",
+   		"api_key": "your-mcp-sse-api-key",
+   		"tools": {
+   			"mcp-perplexity-search": {
+   				"url": "https://your-coolify-url:3030/sse/mcp-perplexity-search",
+   				"headers": {
+   					"X-API-Key": "your-mcp-sse-api-key",
+   					"X-Tool-PERPLEXITY_API_KEY": "your-perplexity-api-key"
+   				}
+   			},
+   			"mcp-tavily-search": {
+   				"url": "https://your-coolify-url:3030/sse/mcp-tavily-search",
+   				"headers": {
+   					"X-API-Key": "your-mcp-sse-api-key",
+   					"X-Tool-TAVILY_API_KEY": "your-tavily-api-key"
+   				}
+   			}
+   		}
+   	}
+   }
+   ```
 
    For Cursor:
 
-   - Open Settings
-   - Search for "Claude"
-   - Under "MCP Configuration":
-     ```
-     SSE URL: https://your-coolify-url:3030
-     API Key: your-mcp-sse-api-key  # The value you set in MCP_SSE_API_KEY
-     ```
+   ```json
+   {
+   	"mcp": {
+   		"transport": "sse",
+   		"url": "https://your-coolify-url:3030/sse",
+   		"api_key": "your-mcp-sse-api-key",
+   		"tools": {
+   			"mcp-perplexity-search": {
+   				"url": "https://your-coolify-url:3030/sse/mcp-perplexity-search",
+   				"headers": {
+   					"X-API-Key": "your-mcp-sse-api-key",
+   					"X-Tool-PERPLEXITY_API_KEY": "your-perplexity-api-key"
+   				}
+   			}
+   		}
+   	}
+   }
+   ```
 
-   The API Key you configure in your clients must match the `MCP_SSE_API_KEY` environment variable you set in Coolify.
+   **Important Notes:**
+
+   - The `X-API-Key` header must match the `MCP_SSE_API_KEY` environment variable you set in Coolify
+   - Tool-specific API keys are passed via `X-Tool-*` headers (e.g., `X-Tool-PERPLEXITY_API_KEY`)
+   - Each tool connection requires its own specific URL (`/sse/{tool-id}`)
+   - API keys are passed at runtime and not stored on the server
 
 5. **Testing Your Deployment**
 
@@ -76,16 +107,10 @@ A Server-Sent Events (SSE) implementation for MCP tools, replacing the current s
    # Test server health
    curl https://your-coolify-url/health
 
-   # Test tool registration (replace secret-key with your MCP_SSE_API_KEY)
-   curl -X POST https://your-coolify-url/tools \
-     -H "Content-Type: application/json" \
-     -H "X-API-Key: secret-key" \
-     -d '{
-       "id": "test-tool",
-       "name": "Test Tool",
-       "version": "1.0.0",
-       "description": "A test tool"
-     }'
+   # Test tool connection with API keys
+   curl -N https://your-coolify-url/sse/mcp-perplexity-search \
+     -H "X-API-Key: your-mcp-sse-api-key" \
+     -H "X-Tool-PERPLEXITY_API_KEY: your-perplexity-api-key"
    ```
 
 ## Development

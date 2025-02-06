@@ -22,6 +22,7 @@ export interface Connection {
 	target: WritableStreamDefaultWriter;
 	connectedAt: Date;
 	lastMessageAt: Date;
+	toolApiKeys: Record<string, string>;
 }
 
 export interface ConnectionManager {
@@ -45,4 +46,9 @@ export interface ErrorResponse {
 	code: string;
 	message: string;
 	details?: unknown;
+}
+
+// Tool process related types
+export interface ToolConfig {
+	apiKeys?: Record<string, string>;
 }

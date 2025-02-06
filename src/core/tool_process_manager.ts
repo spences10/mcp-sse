@@ -1,4 +1,4 @@
-import { Tool } from "@/types/types.ts";
+import { Tool, ToolConfig } from "@/types/types.ts";
 
 interface ToolProcess {
 	id: string;
@@ -14,8 +14,19 @@ export class ToolProcessManager {
 	private decoder = new TextDecoder();
 	private encoder = new TextEncoder();
 
-	async startToolProcess(tool: Tool): Promise<ToolProcess> {
+	async startToolProcess(
+		tool: Tool,
+		config?: ToolConfig
+	): Promise<ToolProcess> {
 		const processId = `${tool.id}-${Date.now()}`;
+
+		// Merge environment variables with runtime API keys
+		const env = { ...tool.env };
+		if (config?.apiKeys) {
+			for (const [key, value] of Object.entries(config.apiKeys)) {
+				env[key] = value;
+			}
+		}
 
 		// Start the process
 		const process = new Deno.Command(tool.command, {
@@ -23,7 +34,7 @@ export class ToolProcessManager {
 			stdin: "piped",
 			stdout: "piped",
 			stderr: "piped",
-			env: tool.env,
+			env,
 		}).spawn();
 
 		const toolProcess: ToolProcess = {

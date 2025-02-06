@@ -103,17 +103,6 @@ export class ToolRouteHandler {
 	}
 
 	handleToolList(req: Request): Response {
-		// Check API key
-		const apiKey = req.headers.get("X-API-Key");
-		const configApiKey = Deno.env.get("MCP_SSE_API_KEY");
-
-		if (!apiKey || apiKey !== configApiKey) {
-			return new Response(JSON.stringify({ error: "Unauthorized" }), {
-				status: 401,
-				headers: { "Content-Type": "application/json" },
-			});
-		}
-
 		const tools = this.toolRegistry.getAllTools();
 		return new Response(JSON.stringify({ tools }), {
 			headers: { "Content-Type": "application/json" },

@@ -2,7 +2,7 @@ import { SSEConnectionManager } from "@/core/connection_manager.ts";
 import { ToolProcessManager } from "@/core/tool_process_manager.ts";
 import { MCPToolRegistry } from "@/core/tool_registry.ts";
 import { ToolRouteHandler } from "@/routes/tool_routes.ts";
-import { Connection } from "@/types/types.ts";
+import { Connection, Tool } from "@/types/types.ts";
 import { ConfigLoader } from "@/utils/config_loader.ts";
 import { crypto } from "@Web/crypto/mod.ts";
 import { serve } from "@Web/http/server.ts";
@@ -34,12 +34,34 @@ Deno.addSignalListener("SIGINT", async () => {
 	Deno.exit(0);
 });
 
-async function handleSSE(req: Request): Promise<Response> {
+async function handleSSE(req: Request, tool: Tool): Promise<Response> {
+	// Check authentication
+	const apiKey = req.headers.get("X-API-Key");
+	const configApiKey = Deno.env.get("MCP_SSE_API_KEY");
+
+	if (!apiKey || apiKey !== configApiKey) {
+		return new Response(JSON.stringify({ error: "Unauthorized" }), {
+			status: 401,
+			headers: { "Content-Type": "application/json" },
+		});
+	}
+
+	// Extract tool-specific API keys from headers
+	const toolApiKeys: Record<string, string> = {};
+	// Get all headers and filter for tool API keys
+	req.headers.forEach((value, key) => {
+		if (typeof key === "string" && key.toLowerCase().startsWith("x-tool-")) {
+			const apiKeyName = key.slice(7).toUpperCase(); // Remove 'x-tool-' and uppercase
+			toolApiKeys[apiKeyName] = value;
+		}
+	});
+
 	const headers = new Headers({
 		"Content-Type": "text/event-stream",
 		"Cache-Control": "no-cache",
 		Connection: "keep-alive",
 		"Access-Control-Allow-Origin": "*",
+		"Access-Control-Allow-Headers": "Content-Type, X-API-Key, X-Tool-*",
 	});
 
 	try {
@@ -54,24 +76,84 @@ async function handleSSE(req: Request): Promise<Response> {
 			target: writer,
 			connectedAt: new Date(),
 			lastMessageAt: new Date(),
+			toolApiKeys,
 		};
 
 		connectionManager.addConnection(connection);
 
 		// Send initial connection message with available tools
 		const initialMessage = {
-			type: "system",
+			type: "init",
 			payload: {
-				connectionId,
-				status: "connected",
-				availableTools: toolRegistry.getAllTools(),
+				protocol: {
+					version: "1.0",
+					name: "mcp",
+				},
+				tools: toolRegistry.getAllTools().map((tool) => ({
+					name: tool.id,
+					description: tool.description || `MCP tool: ${tool.id}`,
+					schema: {
+						type: "function",
+						parameters: {
+							type: "object",
+							properties: {},
+							required: [],
+						},
+					},
+				})),
 			},
-			timestamp: Date.now(),
 		};
 
 		await writer.write(
 			encoder.encode(`data: ${JSON.stringify(initialMessage)}\n\n`)
 		);
+
+		// Send ready message
+		const readyMessage = {
+			type: "ready",
+		};
+
+		await writer.write(
+			encoder.encode(`data: ${JSON.stringify(readyMessage)}\n\n`)
+		);
+
+		// Handle incoming messages
+		if (req.body) {
+			const reader = req.body.getReader();
+			try {
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+
+					const message = new TextDecoder().decode(value);
+					console.log("Received message:", message);
+
+					// Process the message and send response through the tool process manager
+					try {
+						const parsedMessage = JSON.parse(message);
+						const process = await toolProcessManager.startToolProcess(tool, {
+							apiKeys: toolApiKeys,
+						});
+						await toolProcessManager.sendInput(process.id, message);
+					} catch (error) {
+						console.error("Error processing message:", error);
+						const errorResponse = {
+							type: "error",
+							event: "error",
+							payload: {
+								error: "Failed to process message",
+							},
+							timestamp: Date.now(),
+						};
+						await writer.write(
+							encoder.encode(`data: ${JSON.stringify(errorResponse)}\n\n`)
+						);
+					}
+				}
+			} finally {
+				reader.releaseLock();
+			}
+		}
 
 		return new Response(readable, { headers });
 	} catch (error) {
@@ -95,14 +177,29 @@ const handler = async (req: Request): Promise<Response> => {
 			headers: {
 				"Access-Control-Allow-Origin": "*",
 				"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type, X-API-Key",
+				"Access-Control-Allow-Headers": "Content-Type",
 			},
 		});
 	}
 
 	// Handle SSE connections
-	if (url.pathname === "/sse") {
-		return handleSSE(req);
+	if (url.pathname.startsWith("/sse/")) {
+		const toolId = url.pathname.split("/")[2]; // Get the tool ID from the URL
+		const tool = toolRegistry.getTool(toolId);
+
+		if (!tool) {
+			return new Response(JSON.stringify({ error: "Tool not found" }), {
+				status: 404,
+				headers: { "Content-Type": "application/json" },
+			});
+		}
+
+		return handleSSE(req, tool);
+	} else if (url.pathname === "/sse") {
+		// List available tools
+		return new Response(JSON.stringify({ tools: toolRegistry.getAllTools() }), {
+			headers: { "Content-Type": "application/json" },
+		});
 	}
 
 	// Tool registration endpoint
