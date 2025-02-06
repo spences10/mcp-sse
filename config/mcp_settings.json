@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "example_tool": {
+      "command": "echo",
+      "args": [
+        "Hello from example tool"
+      ],
+      "env": {}
+    }
+  }
+}
