@@ -4,8 +4,8 @@ import { MCPToolRegistry } from "@/core/tool_registry.ts";
 import { ToolRouteHandler } from "@/routes/tool_routes.ts";
 import { Connection } from "@/types/types.ts";
 import { ConfigLoader } from "@/utils/config_loader.ts";
-import { crypto } from "std/crypto/mod.ts";
-import { serve } from "std/http/server.ts";
+import { crypto } from "@Web/crypto/mod.ts";
+import { serve } from "@Web/http/server.ts";
 
 const connectionManager = new SSEConnectionManager();
 const toolRegistry = new MCPToolRegistry();
