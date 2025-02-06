@@ -4,10 +4,8 @@ aptPkgs = ['curl']
 
 [phases.build]
 cmds = [
-  'rm -f deno.lock',
-  'deno cache --reload src/main.ts',
-  'deno cache src/main.ts'
+  'deno cache --no-lock src/main.ts'
 ]
 
 [start]
-cmd = "deno run --allow-net --allow-read --allow-run --allow-env src/main.ts" 
+cmd = "deno run --no-lock --allow-net --allow-read --allow-run --allow-env src/main.ts" 
