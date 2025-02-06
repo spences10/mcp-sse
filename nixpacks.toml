@@ -1,0 +1,6 @@
+[phases.setup]
+nixPkgs = ['deno', 'nodejs']
+aptPkgs = ['curl']
+
+[start]
+cmd = "deno run --allow-net --allow-read --allow-run --allow-env src/main.ts" 
