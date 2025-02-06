@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ['deno_2', 'nodejs']
+nixPkgs = ['deno', 'nodejs']
 aptPkgs = ['curl']
 
 [start]

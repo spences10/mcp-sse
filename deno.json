@@ -13,7 +13,7 @@
   },
   "imports": {
     "@/": "./src/",
-    "$std/": "https://deno.land/std@0.220.0/"
+    "std/": "https://deno.land/std@0.220.0/"
   },
   "fmt": {
     "options": {
