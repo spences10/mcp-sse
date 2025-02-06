@@ -1,11 +1,24 @@
 {
   "mcpServers": {
-    "example_tool": {
-      "command": "echo",
+    "mcp-jinaai-search": {
+      "command": "npx",
       "args": [
-        "Hello from example tool"
+        "-y",
+        "mcp-jinaai-search"
       ],
-      "env": {}
+      "env": {
+        "JINAAI_API_KEY": "$JINAAI_API_KEY"
+      }
+    },
+    "mcp-tavily-search": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-tavily-search"
+      ],
+      "env": {
+        "TAVILY_API_KEY": "$TAVILY_API_KEY"
+      }
     }
   }
 }

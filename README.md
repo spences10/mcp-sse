@@ -14,13 +14,14 @@ A Server-Sent Events (SSE) implementation for MCP tools, replacing the current s
    1. In Coolify dashboard:
       - Create new service
       - Choose "Application" type
-      - Select "Dockerfile" deployment
-      - Connect your Git repository
+      - For "Source" select "Git Repository" (not "Dockerfile")
+      - Connect and select your Git repository
+      - The Dockerfile in your repo will be automatically detected
       - Set port to 3030
       - Add environment variable: `MCP_SSE_API_KEY=your-secret-key`
 
 3. **Tool Configuration**
-   Edit `config/mcp_settings.json` to add your tools:
+   Configure your MCP tools in `config/mcp_settings.json`. These tools will run on your Coolify instance:
 
    ```json
    {
@@ -31,16 +32,43 @@ A Server-Sent Events (SSE) implementation for MCP tools, replacing the current s
    			"env": {
    				"TAVILY_API_KEY": "your-tavily-key"
    			}
+   		},
+   		"another-tool": {
+   			"command": "npx",
+   			"args": ["another-mcp-tool"],
+   			"env": {
+   				"TOOL_API_KEY": "your-key"
+   			}
    		}
    	}
    }
    ```
 
-4. **Client Configuration**
-   Configure your clients (Claude Desktop, Cursor) to use:
+   Each tool configured here will be available on your SSE server. When Claude or Cursor connects to your server, these tools will be ready to use with no startup time.
 
-   - SSE URL: Your Coolify service URL
-   - API Key: The `MCP_SSE_API_KEY` you set
+4. **Client Configuration**
+   Configure your AI tools (Claude Desktop, Cursor) to connect to your SSE server:
+
+   For Claude Desktop:
+
+   - Go to Settings > Tools
+   - Add a new tool configuration:
+     ```
+     SSE URL: https://your-coolify-url:3030
+     API Key: your-mcp-sse-api-key  # The value you set in MCP_SSE_API_KEY
+     ```
+
+   For Cursor:
+
+   - Open Settings
+   - Search for "Claude"
+   - Under "MCP Configuration":
+     ```
+     SSE URL: https://your-coolify-url:3030
+     API Key: your-mcp-sse-api-key  # The value you set in MCP_SSE_API_KEY
+     ```
+
+   The API Key you configure in your clients must match the `MCP_SSE_API_KEY` environment variable you set in Coolify.
 
 5. **Testing Your Deployment**
 

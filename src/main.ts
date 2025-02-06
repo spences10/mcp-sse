@@ -1,4 +1,5 @@
 import { SSEConnectionManager } from "@/core/connection_manager.ts";
+import { ToolProcessManager } from "@/core/tool_process_manager.ts";
 import { MCPToolRegistry } from "@/core/tool_registry.ts";
 import { ToolRouteHandler } from "@/routes/tool_routes.ts";
 import { Connection } from "@/types/types.ts";
@@ -8,7 +9,8 @@ import { serve } from "https://deno.land/std/http/server.ts";
 
 const connectionManager = new SSEConnectionManager();
 const toolRegistry = new MCPToolRegistry();
-const toolRouteHandler = new ToolRouteHandler(toolRegistry);
+const toolProcessManager = new ToolProcessManager();
+const toolRouteHandler = new ToolRouteHandler(toolRegistry, toolProcessManager);
 const configLoader = ConfigLoader.getInstance();
 
 // Load and register tools from config
@@ -17,11 +19,20 @@ try {
 	const tools = configLoader.convertConfigToTools();
 	for (const tool of tools) {
 		toolRegistry.register(tool);
-		console.log(`Registered tool: ${tool.name}`);
+		// Start the tool process
+		await toolProcessManager.startToolProcess(tool);
+		console.log(`Started tool: ${tool.name}`);
 	}
 } catch (error) {
 	console.error("Failed to load tools from config:", error);
 }
+
+// Cleanup on exit
+Deno.addSignalListener("SIGINT", async () => {
+	console.log("\nShutting down...");
+	await toolProcessManager.stopAllProcesses();
+	Deno.exit(0);
+});
 
 async function handleSSE(req: Request): Promise<Response> {
 	const headers = new Headers({
