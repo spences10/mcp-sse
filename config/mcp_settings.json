@@ -19,6 +19,13 @@
       "env": {
         "TAVILY_API_KEY": "$TAVILY_API_KEY"
       }
+    },
+    "test_server": {
+      "command": "echo",
+      "args": [
+        "test server running"
+      ],
+      "env": {}
     }
   }
 }
