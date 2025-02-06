@@ -35,16 +35,22 @@ Deno.addSignalListener("SIGINT", async () => {
 });
 
 async function handleSSE(req: Request, tool: Tool): Promise<Response> {
+	console.log("SSE connection attempt received");
+
 	// Check authentication
 	const apiKey = req.headers.get("X-API-Key");
 	const configApiKey = Deno.env.get("MCP_SSE_API_KEY");
+	console.log("Auth check:", !!apiKey, !!configApiKey);
 
 	if (!apiKey || apiKey !== configApiKey) {
+		console.log("Auth failed");
 		return new Response(JSON.stringify({ error: "Unauthorized" }), {
 			status: 401,
 			headers: { "Content-Type": "application/json" },
 		});
 	}
+
+	console.log("Auth successful, setting up SSE connection");
 
 	// Extract tool-specific API keys from headers
 	const toolApiKeys: Record<string, string> = {};
@@ -61,7 +67,11 @@ async function handleSSE(req: Request, tool: Tool): Promise<Response> {
 		"Cache-Control": "no-cache",
 		Connection: "keep-alive",
 		"Access-Control-Allow-Origin": "*",
-		"Access-Control-Allow-Headers": "Content-Type, X-API-Key, X-Tool-*",
+		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+		"Access-Control-Allow-Headers":
+			"Content-Type, X-API-Key, X-Tool-*, Accept, Origin",
+		"Access-Control-Allow-Credentials": "true",
+		"Access-Control-Expose-Headers": "*",
 	});
 
 	try {
@@ -170,14 +180,21 @@ async function handleSSE(req: Request, tool: Tool): Promise<Response> {
 
 const handler = async (req: Request): Promise<Response> => {
 	const url = new URL(req.url);
+	console.log(`Incoming request to: ${url.pathname}`);
+	console.log(`Method: ${req.method}`);
+	console.log("Request headers:");
+	req.headers.forEach((value, key) => console.log(`  ${key}: ${value}`));
 
 	// Enable CORS
 	if (req.method === "OPTIONS") {
+		console.log("Handling OPTIONS request");
 		return new Response(null, {
 			headers: {
 				"Access-Control-Allow-Origin": "*",
 				"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type",
+				"Access-Control-Allow-Headers":
+					"Content-Type, X-API-Key, X-Tool-*, Accept, Origin",
+				"Access-Control-Allow-Credentials": "true",
 			},
 		});
 	}
