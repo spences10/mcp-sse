@@ -2,5 +2,8 @@
 nixPkgs = ['deno', 'nodejs']
 aptPkgs = ['curl']
 
+[phases.build]
+cmds = ['deno cache --lock=deno.lock src/main.ts']
+
 [start]
 cmd = "deno run --allow-net --allow-read --allow-run --allow-env src/main.ts" 
