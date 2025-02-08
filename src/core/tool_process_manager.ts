@@ -14,10 +14,22 @@ export class ToolProcessManager {
 	private decoder = new TextDecoder();
 	private encoder = new TextEncoder();
 
+	getProcessCount(): number {
+		return this.processes.size;
+	}
+
 	async startToolProcess(
 		tool: Tool,
 		config?: ToolConfig
 	): Promise<ToolProcess> {
+		// Check if process already exists
+		const existingProcess = Array.from(this.processes.values()).find(
+			(p) => p.tool.id === tool.id
+		);
+		if (existingProcess) {
+			return existingProcess;
+		}
+
 		const processId = `${tool.id}-${Date.now()}`;
 
 		// Merge environment variables with runtime API keys
@@ -27,6 +39,9 @@ export class ToolProcessManager {
 				env[key] = value;
 			}
 		}
+
+		console.log(`Starting tool process: ${tool.id}`);
+		console.log(`Command: ${tool.command} ${tool.args.join(" ")}`);
 
 		// Start the process
 		const process = new Deno.Command(tool.command, {
@@ -46,12 +61,15 @@ export class ToolProcessManager {
 			stderr: process.stderr.getReader(),
 		};
 
-		// Start reading stdout
+		// Start reading stdout and stderr
 		this.handleStdout(toolProcess);
-		// Start reading stderr
 		this.handleStderr(toolProcess);
 
 		this.processes.set(processId, toolProcess);
+
+		// Wait a moment to ensure process starts
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+
 		return toolProcess;
 	}
 
@@ -62,11 +80,12 @@ export class ToolProcessManager {
 				if (done) break;
 
 				const text = this.decoder.decode(value);
-				// Here you would send the output to the appropriate SSE connection
-				console.log(`[${toolProcess.tool.id}] stdout:`, text);
+				console.log(`[${toolProcess.tool.id}] stdout: ${text.trim()}`);
 			}
 		} catch (error) {
 			console.error(`Error reading stdout for ${toolProcess.tool.id}:`, error);
+			// Try to restart the process
+			await this.restartProcess(toolProcess.id);
 		}
 	}
 
@@ -77,10 +96,26 @@ export class ToolProcessManager {
 				if (done) break;
 
 				const text = this.decoder.decode(value);
-				console.error(`[${toolProcess.tool.id}] stderr:`, text);
+				console.error(`[${toolProcess.tool.id}] stderr: ${text.trim()}`);
 			}
 		} catch (error) {
 			console.error(`Error reading stderr for ${toolProcess.tool.id}:`, error);
+			// Try to restart the process
+			await this.restartProcess(toolProcess.id);
+		}
+	}
+
+	private async restartProcess(processId: string): Promise<void> {
+		const toolProcess = this.processes.get(processId);
+		if (!toolProcess) return;
+
+		console.log(`Restarting process: ${toolProcess.tool.id}`);
+
+		try {
+			await this.stopProcess(processId);
+			await this.startToolProcess(toolProcess.tool);
+		} catch (error) {
+			console.error(`Failed to restart process ${processId}:`, error);
 		}
 	}
 
@@ -94,6 +129,8 @@ export class ToolProcessManager {
 			await toolProcess.stdin.write(this.encoder.encode(input + "\n"));
 		} catch (error) {
 			console.error(`Error sending input to ${processId}:`, error);
+			// Try to restart the process
+			await this.restartProcess(processId);
 			throw error;
 		}
 	}

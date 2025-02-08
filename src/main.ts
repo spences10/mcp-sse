@@ -5,7 +5,7 @@ import { ToolRouteHandler } from "@/routes/tool_routes.ts";
 import { Connection, Tool } from "@/types/types.ts";
 import { ConfigLoader } from "@/utils/config_loader.ts";
 import { crypto } from "@Web/crypto/mod.ts";
-import { serve } from "@Web/http/server.ts";
+import { serve } from "https://deno.land/std@0.220.1/http/server.ts";
 
 const connectionManager = new SSEConnectionManager();
 const toolRegistry = new MCPToolRegistry();
@@ -13,18 +13,23 @@ const toolProcessManager = new ToolProcessManager();
 const toolRouteHandler = new ToolRouteHandler(toolRegistry, toolProcessManager);
 const configLoader = ConfigLoader.getInstance();
 
-// Load and register tools from config
+// Load and start tools from config
 try {
 	await configLoader.loadConfig();
 	const tools = configLoader.convertConfigToTools();
+
+	console.log("Starting tools from config...");
 	for (const tool of tools) {
+		console.log(`Registering tool: ${tool.id}`);
 		toolRegistry.register(tool);
-		// Start the tool process
+
+		console.log(`Starting tool process: ${tool.id}`);
 		await toolProcessManager.startToolProcess(tool);
-		console.log(`Started tool: ${tool.name}`);
 	}
+	console.log("All tools started successfully");
 } catch (error) {
-	console.error("Failed to load tools from config:", error);
+	console.error("Failed to load or start tools:", error);
+	Deno.exit(1);
 }
 
 // Cleanup on exit
@@ -185,9 +190,8 @@ const handler = async (req: Request): Promise<Response> => {
 	console.log("Request headers:");
 	req.headers.forEach((value, key) => console.log(`  ${key}: ${value}`));
 
-	// Enable CORS
+	// Handle CORS preflight
 	if (req.method === "OPTIONS") {
-		console.log("Handling OPTIONS request");
 		return new Response(null, {
 			headers: {
 				"Access-Control-Allow-Origin": "*",
@@ -201,22 +205,26 @@ const handler = async (req: Request): Promise<Response> => {
 
 	// Handle SSE connections
 	if (url.pathname.startsWith("/sse/")) {
-		const toolId = url.pathname.split("/")[2]; // Get the tool ID from the URL
-		const tool = toolRegistry.getTool(toolId);
+		const toolId = url.pathname.split("/")[2];
+		return await toolRouteHandler.handleSSE(req, toolId);
+	}
 
-		if (!tool) {
-			return new Response(JSON.stringify({ error: "Tool not found" }), {
-				status: 404,
+	if (url.pathname === "/sse") {
+		return await toolRouteHandler.handleSSE(req);
+	}
+
+	// Health check endpoint
+	if (url.pathname === "/health") {
+		return new Response(
+			JSON.stringify({
+				status: "ok",
+				tools: toolRegistry.getAllTools().map((t) => t.id),
+				processes: toolProcessManager.getProcessCount(),
+			}),
+			{
 				headers: { "Content-Type": "application/json" },
-			});
-		}
-
-		return handleSSE(req, tool);
-	} else if (url.pathname === "/sse") {
-		// List available tools
-		return new Response(JSON.stringify({ tools: toolRegistry.getAllTools() }), {
-			headers: { "Content-Type": "application/json" },
-		});
+			}
+		);
 	}
 
 	// Tool registration endpoint
@@ -229,21 +237,6 @@ const handler = async (req: Request): Promise<Response> => {
 		return toolRouteHandler.handleToolList(req);
 	}
 
-	// Health check endpoint
-	if (url.pathname === "/health") {
-		return new Response(
-			JSON.stringify({
-				status: "ok",
-				connections: connectionManager.connections.size,
-				registeredTools: toolRegistry.getAllTools().length,
-			}),
-			{
-				headers: { "Content-Type": "application/json" },
-			}
-		);
-	}
-
-	// Handle 404
 	return new Response("Not Found", { status: 404 });
 };
 

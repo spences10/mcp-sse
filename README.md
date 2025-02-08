@@ -115,14 +115,76 @@ A Server-Sent Events (SSE) implementation for MCP tools, replacing the current s
 
 ## Development
 
-1. Install Deno
-2. Run locally:
+1. **Prerequisites**
+
+   - Install [Deno](https://deno.land/#installation)
+   - Install [Node.js](https://nodejs.org/) (required for running MCP tools)
+
+2. **Local Setup**
+
    ```bash
+   # Clone the repository
+   git clone <your-repo-url>
+   cd mcp-sse
+
+   # Set environment variable for local development
+   export MCP_SSE_API_KEY="your-local-dev-key"
+   ```
+
+3. **Configure Tools**
+   Edit `config/mcp_settings.json` to add your tools:
+
+   ```json
+   {
+   	"mcpServers": {
+   		"your-tool-name": {
+   			"command": "npx",
+   			"args": ["your-tool-package"],
+   			"env": {}
+   		}
+   	}
+   }
+   ```
+
+4. **Run the Server**
+
+   ```bash
+   # Start the development server
    deno task dev
    ```
-3. Run tests:
+
+5. **Testing**
+
    ```bash
+   # Test server health
+   curl http://localhost:3030/health
+
+   # Test SSE connection (replace with your tool name)
+   curl -N http://localhost:3030/sse/your-tool-name \
+     -H "X-API-Key: your-local-dev-key"
+
+   # Run the test suite
    deno task test
+   ```
+
+6. **Client Configuration for Local Development**
+   Update your Claude Desktop or Cursor configuration to use localhost:
+   ```json
+   {
+   	"mcp": {
+   		"transport": "sse",
+   		"url": "http://localhost:3030/sse",
+   		"api_key": "your-local-dev-key",
+   		"tools": {
+   			"your-tool-name": {
+   				"url": "http://localhost:3030/sse/your-tool-name",
+   				"headers": {
+   					"X-API-Key": "your-local-dev-key"
+   				}
+   			}
+   		}
+   	}
+   }
    ```
 
 ## Project Structure
@@ -146,3 +208,41 @@ A Server-Sent Events (SSE) implementation for MCP tools, replacing the current s
 - Error recovery and reconnection handling
 - Authentication and authorization
 - Performance optimized for long-running connections
+
+## SSE Implementation Details
+
+The server implements Server-Sent Events (SSE) for real-time communication with clients. Key features include:
+
+- Persistent connections with automatic reconnection
+- Real-time message broadcasting to all connected clients
+- Event-based message handling
+- Connection pool management
+- Error handling and recovery
+
+### Testing SSE Functionality
+
+1. Start the server:
+
+```bash
+deno task dev
+```
+
+2. Run the test client:
+
+```bash
+deno run --allow-net tests/test_sse_client.ts
+```
+
+The test client will:
+
+- Connect to the SSE server
+- Listen for incoming messages
+- Display connection status and received messages
+- Handle connection errors
+
+You can also test manually using curl:
+
+```bash
+curl -N http://localhost:8000/sse \
+  -H "X-API-Key: your-local-dev-key"
+```
