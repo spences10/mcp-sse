@@ -1,5 +1,5 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerCalculateSumTool } from "./calculate-sum";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerCalculateSumTool } from './calculate-sum';
 
 /**
  * Registers all MCP tools on the given server instance.

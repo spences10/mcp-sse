@@ -8,7 +8,7 @@
  * A JSON-RPC request object.
  */
 export interface JSONRPCRequest {
-	readonly jsonrpc: "2.0";
+	readonly jsonrpc: '2.0';
 	readonly method: string;
 	readonly params?: unknown;
 	readonly id: string | number;
@@ -18,7 +18,7 @@ export interface JSONRPCRequest {
  * A JSON-RPC notification object (no id).
  */
 export interface JSONRPCNotification {
-	readonly jsonrpc: "2.0";
+	readonly jsonrpc: '2.0';
 	readonly method: string;
 	readonly params?: unknown;
 }
@@ -27,7 +27,7 @@ export interface JSONRPCNotification {
  * A JSON-RPC response object.
  */
 export interface JSONRPCResponse {
-	readonly jsonrpc: "2.0";
+	readonly jsonrpc: '2.0';
 	readonly id: string | number;
 	readonly result?: unknown;
 	readonly error?: {

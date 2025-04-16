@@ -1,5 +1,5 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 
 /**
  * Registers the "calculate_sum" tool on the given MCP server.
@@ -8,18 +8,18 @@ import { z } from "zod";
  */
 export function registerCalculateSumTool(server: McpServer): void {
 	server.tool(
-		"calculate_sum",
+		'calculate_sum',
 		{
-			a: z.number().describe("First number"),
-			b: z.number().describe("Second number"),
+			a: z.number().describe('First number'),
+			b: z.number().describe('Second number'),
 		},
 		async ({ a, b }) => ({
 			content: [
 				{
-					type: "text",
+					type: 'text',
 					text: String(a + b),
 				},
 			],
-		})
+		}),
 	);
 }
