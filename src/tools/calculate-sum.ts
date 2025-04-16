@@ -7,19 +7,19 @@ import { z } from "zod";
  * @param server - The MCP server instance
  */
 export function registerCalculateSumTool(server: McpServer): void {
-  server.tool(
-    "calculate_sum",
-    {
-      a: z.number().describe("First number"),
-      b: z.number().describe("Second number"),
-    },
-    async ({ a, b }) => ({
-      content: [
-        {
-          type: "text",
-          text: String(a + b),
-        },
-      ],
-    })
-  );
+	server.tool(
+		"calculate_sum",
+		{
+			a: z.number().describe("First number"),
+			b: z.number().describe("Second number"),
+		},
+		async ({ a, b }) => ({
+			content: [
+				{
+					type: "text",
+					text: String(a + b),
+				},
+			],
+		})
+	);
 }

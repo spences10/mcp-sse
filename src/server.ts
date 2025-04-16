@@ -1,6 +1,5 @@
 /**
  * MCP SSE Server
- * MCP Inspector compatible, fully MCP-compliant, with example tool/resource.
  */
 import {
 	McpServer,
@@ -74,6 +73,5 @@ app.get("/", (req, res) => {
 
 const PORT: string | number = process.env.PORT || 3001;
 app.listen(PORT, () => {
-	// eslint-disable-next-line no-console
 	console.log(`MCP SSE Server running on port ${PORT}`);
 });
