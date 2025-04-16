@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "mcp-omnisearch": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-omnisearch"
+      ],
+      "env": {
+        "TAVILY_API_KEY": "key",
+        "BRAVE_API_KEY": "key",
+        "KAGI_API_KEY": "key",
+        "PERPLEXITY_API_KEY": "key",
+        "JINA_AI_API_KEY": "key"
+      }
+    }
+  }
+}

@@ -14,3 +14,6 @@ dist/
 
 # npm
 package-lock.json
+
+# Config
+config/mcp-servers.json
