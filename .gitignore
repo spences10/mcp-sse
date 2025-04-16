@@ -1,0 +1,16 @@
+# Node
+node_modules/
+dist/
+.env
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# VSCode
+.vscode/
+
+# Mac
+*.DS_Store
+
+# npm
+package-lock.json
