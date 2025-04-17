@@ -71,7 +71,7 @@ app.get('/', (req, res) => {
 	});
 });
 
-const PORT: string | number = process.env.PORT || 3001;
+const PORT: string | number = process.env.PORT || 8080;
 app.listen(PORT, () => {
 	console.log(`MCP SSE Server running on port ${PORT}`);
 });
